@@ -11,9 +11,7 @@ export class UploadFileService {
 
     constructor(private http: HttpClient) {}
 
-    uploadFilePinata(data: FormData): Observable<any> {
-        let token: any = env['PINATA_JWT'];
-        // let token: any = ''; Solo para pruebas es poner token quemado aqui
+    uploadFilePinata(token: string, data: FormData): Observable<any> {
         return this.http.post(`${this.urlBase}/pinning/pinFileToIPFS`, data, {
             headers: { Authorization: token },
         });

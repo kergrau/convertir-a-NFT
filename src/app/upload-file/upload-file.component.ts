@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { FileTypes } from '../enums/file-types';
+import { MeasurementUnits } from '../enums/measurement-units';
+import { UploadFile } from '../enums/upload-file';
 import { UploadFileService } from '../services/upload-file.service';
 
 @Component({
@@ -23,42 +26,44 @@ export class UploadFileComponent implements OnInit {
             name: 'MyFile2',
             keyvalue: { coleccion: 'prueba2' },
         };
-        this.upFilePinata(this.file, pinataOption, pinataMetadata);
+        let token: string = '';
+        this.upFilePinata(token, this.file, pinataOption, pinataMetadata);
     }
 
     /**
      * This method is to upload file to Pinata
+     * @param token Bearer PINATA_JWT_TOKEN
      * @param file File to upload to Pinata.
      * @param pinataOptions Object with Pinata options
      * @param pinataMetadata Object with file metadata
      */
     upFilePinata(
+        token: string,
         file: File,
         pinataOptions?: Object,
         pinataMetadata?: Object,
     ): void {
         let isValidSize: boolean = this.validateFileSize(file);
         let isValidType: boolean = this.validateFileType(file);
-        if (!isValidSize) {
-            throw 'Your exceed size limit';
-        }
-        if (!isValidType) {
-            throw 'No valid file type';
-        }
+        if (!isValidSize) throw 'Your exceed size limit';
+        if (!isValidType) throw 'No valid file type';
+
         let data: FormData = this.prepareToDataUp(
             file,
             pinataOptions,
             pinataMetadata,
         );
 
-        this.upFileService.uploadFilePinata(data).subscribe((response) => {
-            console.log(response);
-        });
+        this.upFileService
+            .uploadFilePinata(token, data)
+            .subscribe((response) => {
+                console.log(response);
+            });
     }
 
     validateFileSize(file: File): boolean {
-        let size: number = file.size / 1000_000; // Size to MB
-        if (size <= 4) {
+        let size: number = file.size / MeasurementUnits.MB; // Size to MB
+        if (size <= UploadFile.LIMIT_SIZE) {
             return true;
         }
         return false;
@@ -66,8 +71,7 @@ export class UploadFileComponent implements OnInit {
 
     validateFileType(file: File): boolean {
         let type: string = file.type.split('/')[1];
-        let allowedTypes: Array<string> = ['pdf', 'jpg', 'jpeg', 'png'];
-        let isAllowed: boolean = allowedTypes.includes(type);
+        let isAllowed: boolean = FileTypes.ALLOWED.includes(type);
         return isAllowed;
     }
 
