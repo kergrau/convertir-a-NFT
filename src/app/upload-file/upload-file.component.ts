@@ -21,38 +21,28 @@ export class UploadFileComponent implements OnInit {
     }
 
     pruebaSubida() {
-        let pinataOption: Object = { cidVersion: 1 };
         let pinataMetadata: Object = {
-            name: 'MyFile2',
-            keyvalue: { coleccion: 'prueba2' },
+            coleccion: 'prueba2',
+            autor: 'alguien',
+            universidad: 'Alguna',
         };
         let token: string = '';
-        this.upFilePinata(token, this.file, pinataOption, pinataMetadata);
+        this.upFilePinata(token, this.file, pinataMetadata);
     }
 
     /**
      * This method is to upload file to Pinata
      * @param token Bearer PINATA_JWT_TOKEN
      * @param file File to upload to Pinata.
-     * @param pinataOptions Object with Pinata options
-     * @param pinataMetadata Object with file metadata
+     * @param keyValueMetadata Object with key value for metadata
      */
-    upFilePinata(
-        token: string,
-        file: File,
-        pinataOptions?: Object,
-        pinataMetadata?: Object,
-    ): void {
+    upFilePinata(token: string, file: File, keyValueMetadata?: Object): void {
         let isValidSize: boolean = this.validateFileSize(file);
         let isValidType: boolean = this.validateFileType(file);
         if (!isValidSize) throw 'Your exceed size limit';
         if (!isValidType) throw 'No valid file type';
 
-        let data: FormData = this.prepareToDataUp(
-            file,
-            pinataOptions,
-            pinataMetadata,
-        );
+        let data: FormData = this.prepareToDataUp(file, keyValueMetadata);
 
         this.upFileService
             .uploadFilePinata(token, data)
@@ -78,23 +68,15 @@ export class UploadFileComponent implements OnInit {
     /**
      * Prepared data to upload to Pinata
      * @param file File to upload to Pinata
-     * @param pinataOptions Object with Pinata options
-     * @param pinataMetadata Object with file metadata
+     * @param keyValueMetadata Object with file metadata
      * @returns FormData object
      */
-    prepareToDataUp(
-        file: File,
-        pinataOptions?: Object,
-        pinataMetadata?: Object,
-    ): FormData {
+    prepareToDataUp(file: File, keyValueMetadata?: Object): FormData {
         let data: FormData = new FormData();
-        let pinOptionStr: string = JSON.stringify(pinataOptions);
-        let pinMetedataStr: string = JSON.stringify(pinataMetadata);
+        let metadata: Object = { keyvalues: keyValueMetadata };
+        let pinMetedataStr: string = JSON.stringify(metadata);
         data.append('file', file);
-        if (pinataOptions) {
-            data.append('pinataOptions', pinOptionStr);
-        }
-        if (pinataMetadata) {
+        if (keyValueMetadata) {
             data.append('pinataMetadata', pinMetedataStr);
         }
         return data;
