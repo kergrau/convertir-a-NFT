@@ -1,9 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { FileTypes } from '../enums/file-types';
-import { MeasurementUnits } from '../enums/measurement-units';
-import { UploadFile } from '../enums/upload-file';
-import { UploadFileService } from '../services/upload-file.service';
+import { Component, Injectable, OnInit } from '@angular/core';
+import { FileTypes } from '../../enums/file-types';
+import { MeasurementUnits } from '../../enums/measurement-units';
+import { UploadFile } from '../../enums/upload-file';
+import { UploadFileService } from '../../services/upload-file.service';
+import { lastValueFrom } from 'rxjs';
+import { UploadedFile } from 'src/app/models/uploaded-file';
+import { ConfigService } from 'src/app/services/config.service';
 
+@Injectable({
+    providedIn: 'root',
+})
 @Component({
     selector: 'app-upload-file',
     templateUrl: './upload-file.component.html',
@@ -12,7 +18,10 @@ import { UploadFileService } from '../services/upload-file.service';
 export class UploadFileComponent implements OnInit {
     file: File = new File([], ''); // Variable to store file
 
-    constructor(private readonly upFileService: UploadFileService) {}
+    constructor(
+        private readonly upFileService: UploadFileService,
+        private readonly configService: ConfigService,
+    ) {}
 
     ngOnInit(): void {}
 
@@ -26,8 +35,7 @@ export class UploadFileComponent implements OnInit {
             autor: 'alguien',
             universidad: 'Alguna',
         };
-        let token: string = '';
-        this.upFilePinata(token, this.file, pinataMetadata);
+        this.upFilePinata(this.file, pinataMetadata);
     }
 
     /**
@@ -36,19 +44,28 @@ export class UploadFileComponent implements OnInit {
      * @param file File to upload to Pinata.
      * @param keyValueMetadata Object with key value for metadata
      */
-    upFilePinata(token: string, file: File, keyValueMetadata?: Object): void {
+    async upFilePinata(file: File, keyValueMetadata?: Object) {
         let isValidSize: boolean = this.validateFileSize(file);
         let isValidType: boolean = this.validateFileType(file);
         if (!isValidSize) throw 'Your exceed size limit';
         if (!isValidType) throw 'No valid file type';
 
         let data: FormData = this.prepareToDataUp(file, keyValueMetadata);
-
-        this.upFileService
-            .uploadFilePinata(token, data)
-            .subscribe((response) => {
+        let hash = await lastValueFrom(
+            this.upFileService.uploadFilePinata(
+                this.configService.pinataJWT,
+                data,
+            ),
+        )
+            .then((response: UploadedFile) => {
                 console.log(response);
+                return response.IpfsHash;
+            })
+            .catch((err: any) => {
+                console.error(err);
+                return '';
             });
+        return hash;
     }
 
     validateFileSize(file: File): boolean {

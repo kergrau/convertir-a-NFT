@@ -1,8 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { UploadFileComponent } from './upload-file/upload-file.component';
+import { AccessToNFTComponent } from './components/access-to-nft/access-to-nft.component';
+import { UploadFileComponent } from './components/upload-file/upload-file.component';
 
-const routes: Routes = [{ path: 'upload', component: UploadFileComponent }];
+const routes: Routes = [
+    { path: 'upload', component: UploadFileComponent },
+    { path: 'nft', component: AccessToNFTComponent },
+];
 
 @NgModule({
     imports: [RouterModule.forRoot(routes)],
