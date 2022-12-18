@@ -31,4 +31,17 @@ export class ConfigService {
         this.Contract.setProvider(this.provider);
         this.contract = new this.Contract(ABI.abi, this.addressContract);
     }
+
+    checkKeys(): boolean {
+        if (this.pinataJWT && this.privateKey && this.provider) {
+            return true;
+        }
+        return false;
+    }
+
+    clearKeys() {
+        this.pinataJWT = '';
+        this.privateKey = '';
+        this.provider = '';
+    }
 }

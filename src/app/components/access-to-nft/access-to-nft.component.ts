@@ -8,6 +8,14 @@ import { ConfigService } from 'src/app/services/config.service';
     templateUrl: './access-to-nft.component.html',
     styleUrls: ['./access-to-nft.component.css'],
 })
+
+/**
+ * Antes de ejecutar cualquier metodo que tenga que ver con la interaccion del
+ * contrato hay que ejecutar el metodo configKeys que esta en el service
+ * que se llama configService(pinataJWT: string, privateKey: string,
+ * provider: string)
+ *
+ */
 export class AccessToNFTComponent implements OnInit {
     baseURI: string = 'https://ipfs.io/ipfs/';
     file: File = new File([], ''); // Variable to store file
@@ -18,20 +26,26 @@ export class AccessToNFTComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.getBalance('0x86e47D698CD2544EB3dEa3d7a89693FD72fe0Eb2');
+        /* this.configService.configKeys('PPINATA_KEY', 'PRIVATE_KEY_ACCOUNT',
+           'PROVIDER_ADDRESS_GOERLI');
+        */
     }
 
     onChange(event: any) {
         this.file = event.target.files[0];
     }
 
-    pruebaSubida() {
+    /** Este metodo hace las veces para probar como funcionaria el proceso
+     * de creacion del NFT a partir de un archivo
+     */
+    async pruebaSubida() {
+        // Se crea objeto con los metadatos deseados
         let pinataMetadata: Object = {
-            coleccion: 'prueba2',
-            autor: 'alguien',
-            universidad: 'Alguna',
+            programa: 'Ingenieria Sistemas',
+            anio: '2018',
+            universidad: 'UOC',
         };
-        this.mintNFT(
+        return await this.mintNFT(
             '0x86e47D698CD2544EB3dEa3d7a89693FD72fe0Eb2',
             this.file,
             pinataMetadata,
@@ -59,20 +73,27 @@ export class AccessToNFTComponent implements OnInit {
      * @param keyValueMetadata Un objeto con los metadatos que se le quieren poner al archivo
      */
     async mintNFT(address: string, file: File, keyValueMetadata: Object) {
-        let hash: string = '';
-        await this.upFile
-            .upFilePinata(file, keyValueMetadata)
-            .then((hashIPFS: string) => {
-                hash = hashIPFS;
-            });
+        let isKeysConfig: boolean = this.configService.checkKeys();
+        if (isKeysConfig) {
+            let hash: string = '';
+            await this.upFile
+                .upFilePinata(file, keyValueMetadata)
+                .then((hashIPFS: string) => {
+                    hash = hashIPFS;
+                });
 
-        let transaction: Transaction = await this.prepareTran(
-            address,
-            this.configService.contract.methods.mint(address, hash),
+            let transaction: Transaction = await this.prepareTran(
+                address,
+                this.configService.contract.methods.mint(address, hash),
+            );
+
+            let signedTransaction = await this.signTransaction(transaction);
+            return await this.sendTransaction(signedTransaction);
+        }
+        console.error(
+            'Please config you private key, provider and/or Pinata_JWT',
         );
-
-        let signedTransaction = await this.signTransaction(transaction);
-        await this.sendTransaction(signedTransaction);
+        return 'Please config you private key, provider and/or Pinata_JWT';
     }
 
     /**
